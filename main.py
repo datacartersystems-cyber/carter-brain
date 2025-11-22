@@ -10,7 +10,7 @@ system_prompt_path = pathlib.Path("system_prompt.txt")
 SYSTEM_PROMPT = system_prompt_path.read_text()
 
 # === MODEL ===
-MODEL_NAME = "google/gemma-2b"   # piccola, gira con CPU su Render
+MODEL_NAME = "microsoft/Phi-3-mini-4k-instruct"
 
 tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForCausalLM.from_pretrained(
@@ -28,7 +28,7 @@ class Query(BaseModel):
 
 @app.post("/generate")
 def generate_text(query: Query):
-    full_prompt = SYSTEM_PROMPT + "\n\n" + query.prompt
+    full_prompt = SYSTEM_PROMPT + "\n\nUser: " + query.prompt + "\nAssistant:"
 
     inputs = tokenizer(full_prompt, return_tensors="pt")
     outputs = model.generate(
@@ -38,10 +38,6 @@ def generate_text(query: Query):
         do_sample=True
     )
     text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-
-    # Estrarre solo la parte dopo l'ultimo prompt dell'utente
-    if query.prompt in text:
-        text = text.split(query.prompt)[-1].strip()
 
     return { "response": text }
 
